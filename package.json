@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/jcmf/gribbl/issues"
   },
-  "homepage": "https://github.com/jcmf/gribbl"
+  "homepage": "https://github.com/jcmf/gribbl",
+  "dependencies": {
+    "coffee-script": "^1.9.0"
+  }
 }
