@@ -1,0 +1,19 @@
+{
+  "name": "gribbl",
+  "version": "1.0.0",
+  "description": "a webification technologies",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jcmf/gribbl.git"
+  },
+  "author": "jcmf",
+  "license": "possibly",
+  "bugs": {
+    "url": "https://github.com/jcmf/gribbl/issues"
+  },
+  "homepage": "https://github.com/jcmf/gribbl"
+}
