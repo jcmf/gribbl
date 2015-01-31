@@ -5,7 +5,7 @@
   "main": "lib/gribbl.js",
   "scripts": {
     "prepublish": "coffee -o lib/ src/ && coffee -l README.md",
-    "test": "coffee -o lib/ src/ && coffee -l README.md"
+    "test": "coffee -l README.md"
   },
   "repository": {
     "type": "git",
