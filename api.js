@@ -2,7 +2,7 @@
 (function() {
   module.exports = function() {
     return require('through2').obj(function(file, enc, cb) {
-      var PluginError, e, fail, replaceExtension, src, _ref;
+      var $, PluginError, e, fail, path, replaceExtension, text, _ref;
       _ref = require('gulp-util'), PluginError = _ref.PluginError, replaceExtension = _ref.replaceExtension;
       fail = function(e) {
         return cb(new PluginError('gribbl', e));
@@ -10,18 +10,34 @@
       if (file.isStream()) {
         return fail('streaming not supported');
       }
-      if (file.isBuffer()) {
-        try {
-          src = String(file.contents);
-          file.contents = new Buffer(jade.compile(src, {
-            filename: file.path
-          }));
-        } catch (_error) {
-          e = _error;
-          return fail(e);
-        }
-      }
+      path = file.path;
       file.path = replaceExtension(file.path, '.html');
+      if (!file.isBuffer()) {
+        return cb(null, file);
+      }
+      try {
+        text = String(file.contents);
+        if (/\.jade$/.test(path)) {
+          text = require('jade').render(text, {
+            filename: path,
+            pretty: true
+          });
+        }
+        $ = require('cheerio').load(text);
+        $('script').each(function() {
+          var el, subtext;
+          el = $(this);
+          subtext = el.text();
+          subtext = "/* script tag munged by gribbl */\n" + subtext;
+          return el.text(subtext);
+        });
+        text = $.html();
+        text += '\n';
+      } catch (_error) {
+        e = _error;
+        return fail(e);
+      }
+      file.contents = new Buffer(text);
       return cb(null, file);
     });
   };
