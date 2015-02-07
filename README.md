@@ -1,18 +1,34 @@
 # gribbl
 a webification technologies
 
-Hey, if I put code in here, can CoffeeScript run it?
+## What is this thing?
 
-    console.log 'yes I can'
+This is not yet a thing.  But the goal is for it to be a command-line
+tool that renders a `.jade` template to a single self-contained
+(fully inlined) `.html` file, applying other useful transformations
+along the way (CoffeeScript, Browserify, etc).
 
-I guess I have to use -l, but I'm okay with that.
+## License
 
-In real life, you would `require "gribbl"`, but I guess that won't work
-here.  But I can do this:
+Copyright (c) 2015 Jacques Frechet
 
-    gribbl = require './.'
-    console.log gribbl.message
+### The MIT License (MIT)
 
-For some reason, `'.'` doesn't work, even though `'..'` worked when
-I had this in a test/ subdirectory.  But doing this in the README.md
-is so much nicer!
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
