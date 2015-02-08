@@ -3,10 +3,16 @@ a webification technologies
 
 ## What is this thing?
 
-This is not yet a thing.  But the goal is for it to be a command-line
-tool that renders a `.jade` template to a single self-contained
-(fully inlined) `.html` file, applying other useful transformations
-along the way (CoffeeScript, Browserify, etc).
+This is only just barely starting to be a thing.  But the goal is
+for it to be a command-line tool that compiles a plain `.html` file
+(or a `.jade` template) into a single self-contained `.html` file.
+
+* Scripts, CSS stylesheets, and SVG images can be inlined into their
+  respective tags.  [Not yet implemented.]
+* Resources used by scripts (such as `require()`d modules) can be inlined
+  via Browserify.  [Maybe works now?]
+* Raster images, fonts, and other hyperlinked resources can be inlined via
+  `data:` URIs.  [Not yet implemented.]
 
 ## License
 
