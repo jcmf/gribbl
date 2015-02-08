@@ -14,6 +14,11 @@ for it to be a command-line tool that compiles a plain `.html` file
 * Raster images, fonts, and other hyperlinked resources can be inlined via
   `data:` URIs.  [Not yet implemented.]
 
+This project's ridiculous name comes from [a Bob the Angry Flower
+comic strip](http://www.angryflower.com/aposter.html).  No, I can't
+justify it.  I figured it wouldn't be taken already, and it certainly
+wasn't.
+
 ## License
 
 Copyright (c) 2015 Jacques Frechet
