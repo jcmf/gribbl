@@ -7,7 +7,9 @@
 
   module.exports = function() {
     return require('through2').obj(function(file, enc, cb) {
-      var $, PluginError, e, fail, inPath, replaceExtension, text, _ref;
+      var $, $script, PluginError, b, basedir, buf, e, err, fail, inPath, jsStream, replaceExtension, script, text, ___iced_passed_deferral, __iced_deferrals, __iced_k, _ref;
+      __iced_k = __iced_k_noop;
+      ___iced_passed_deferral = iced.findDeferral(arguments);
       _ref = require('gulp-util'), PluginError = _ref.PluginError, replaceExtension = _ref.replaceExtension;
       fail = function(e) {
         return cb(new PluginError('gribbl', e));
@@ -20,67 +22,89 @@
       if (!file.isBuffer()) {
         return cb(null, file);
       }
-      try {
-        text = String(file.contents);
-        if (/\.jade$/.test(inPath)) {
+      text = String(file.contents);
+      if (/\.jade$/.test(inPath)) {
+        try {
           text = require('jade').render(text, {
             filename: inPath,
             pretty: true
           });
-          text += '\n';
+        } catch (_error) {
+          e = _error;
+          return fail(e);
         }
-        $ = require('cheerio').load(text);
-        $('script').each(function() {
-          var b, basedir, buf, el, err, js, jsStream, ___iced_passed_deferral, __iced_deferrals, __iced_k;
-          __iced_k = __iced_k_noop;
-          ___iced_passed_deferral = iced.findDeferral(arguments);
-          el = $(this);
-          js = el.text();
-          jsStream = new require('stream').Readable();
-          jsStream._read = function() {};
-          jsStream.push(js);
-          jsStream.push(null);
-          basedir = require('path').dirname(inPath);
-          console.log("XXX basedir=" + basedir);
-          b = require('browserify')({
-            basedir: basedir,
-            entries: [jsStream],
-            debug: true
-          });
-          (function(_this) {
-            return (function(__iced_k) {
-              __iced_deferrals = new iced.Deferrals(__iced_k, {
-                parent: ___iced_passed_deferral,
-                filename: "/Users/zaphod/github/gribbl/api.coffee.md"
-              });
-              b.bundle(__iced_deferrals.defer({
-                assign_fn: (function() {
-                  return function() {
-                    err = arguments[0];
-                    return buf = arguments[1];
-                  };
-                })(),
-                lineno: 57
-              }));
-              __iced_deferrals._fulfill();
-            });
-          })(this)((function(_this) {
-            return function() {
-              if (err) {
-                fail(err);
-              }
-              js = String(buf);
-              return el.text(js);
-            };
-          })(this));
-        });
-        text = $.html();
-      } catch (_error) {
-        e = _error;
-        return fail(e);
+        text += '\n';
       }
-      file.contents = new Buffer(text);
-      return cb(null, file);
+      $ = require('cheerio').load(text);
+      (function(_this) {
+        return (function(__iced_k) {
+          var _i, _len, _ref1, _results, _while;
+          _ref1 = $('script').get();
+          _len = _ref1.length;
+          _i = 0;
+          _results = [];
+          _while = function(__iced_k) {
+            var _break, _continue, _next;
+            _break = function() {
+              return __iced_k(_results);
+            };
+            _continue = function() {
+              return iced.trampoline(function() {
+                ++_i;
+                return _while(__iced_k);
+              });
+            };
+            _next = function(__iced_next_arg) {
+              _results.push(__iced_next_arg);
+              return _continue();
+            };
+            if (!(_i < _len)) {
+              return _break();
+            } else {
+              script = _ref1[_i];
+              $script = $(script);
+              jsStream = new require('stream').Readable();
+              jsStream._read = function() {};
+              jsStream.push($script.html());
+              jsStream.push(null);
+              basedir = require('path').dirname(inPath);
+              b = require('browserify')({
+                basedir: basedir,
+                entries: [jsStream],
+                debug: true
+              });
+              (function(__iced_k) {
+                __iced_deferrals = new iced.Deferrals(__iced_k, {
+                  parent: ___iced_passed_deferral,
+                  filename: "/Users/zaphod/github/gribbl/api.coffee.md"
+                });
+                b.bundle(__iced_deferrals.defer({
+                  assign_fn: (function() {
+                    return function() {
+                      err = arguments[0];
+                      return buf = arguments[1];
+                    };
+                  })(),
+                  lineno: 57
+                }));
+                __iced_deferrals._fulfill();
+              })(function() {
+                if (err) {
+                  fail(err);
+                }
+                return _next($script.replaceWith("<script>" + buf + "</script>"));
+              });
+            }
+          };
+          _while(__iced_k);
+        });
+      })(this)((function(_this) {
+        return function() {
+          text = $.html();
+          file.contents = new Buffer(text);
+          return cb(null, file);
+        };
+      })(this));
     });
   };
 

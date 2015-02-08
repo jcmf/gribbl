@@ -4,8 +4,7 @@ html(lang='en')
     title Test
     script
       :coffee-script
-        console.log 'helloes worldses'
-        require './api.js'
+        console.log require('./test').msg
   body
     :markdown
       # Test

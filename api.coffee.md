@@ -24,52 +24,45 @@ already.  Jade never ends its output in a newline, which seems
 forgiveable when pretty mode is turned off (the default), but when
 it's turned on... text files should end in a newline, dammit.
 
-      try
-        text = String file.contents
-        if /\.jade$/.test inPath
+      text = String file.contents
+      if /\.jade$/.test inPath
+        try
           text = require('jade').render text, filename: inPath, pretty: yes
-          text += '\n'
+        catch e
+          return fail e
+        text += '\n'
 
 We're going to use `cheerio`, a jQuery-like library that works on
 strings of HTML rather than a browser DOM, to help us find things
 in the HTML that need inlining.  (If Jade worked with streams, I
 might try `trumpet` here instead.  But it doesn't.)
 
-        $ = require('cheerio').load text
+      $ = require('cheerio').load text
 
 Find script tags and browserify them.  For now I'm just going to
 process script tag contents; I'll leave `src=` inlining for later.
 I'm also not going to worry about `type` just yet.
 
-        $('script').each ->
-          el = $ this
-          js = el.text()
+      for script in $('script').get()
+        $script = $ script
 
 Browserify wants a stream, not a string, and wants basedir but not
 the actual file name.
 
-          jsStream = new require('stream').Readable()
-          jsStream._read = ->
-          jsStream.push js
-          jsStream.push null
-          basedir = require('path').dirname inPath
-          console.log "XXX basedir=#{basedir}"
-          b = require('browserify') {basedir, entries: [jsStream], debug: yes}
-          await b.bundle defer err, buf
-          if err then fail err
-          js = String buf
-          el.text js
+        jsStream = new require('stream').Readable()
+        jsStream._read = ->
+        jsStream.push $script.html()
+        jsStream.push null
+        basedir = require('path').dirname inPath
+        b = require('browserify') {basedir, entries: [jsStream], debug: yes}
+        await b.bundle defer err, buf
+        if err then fail err
+        $script.replaceWith "<script>#{buf}</script>"
 
-Convert the DOM back to text.
+Convert the DOM back to text, convert that to a buffer, and write
+it to the output file.
 
-        text = $.html()
-
-We're going to catch any exceptions thrown by Jade etc and write
-them to the gulp stream, because apparently that is somehow better?
-Maybe it allows the rest of the pipeline to delete the stale output
-file or something?  I'm just copying what everyone else is doing.
-
-      catch e then return fail e
+      text = $.html()
       file.contents = new Buffer text
       cb null, file
 
