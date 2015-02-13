@@ -12,7 +12,7 @@ for it to be a command-line tool that compiles a plain `.html` file
 * Resources used by scripts (such as `require()`d modules) can be inlined
   via Browserify.  [Maybe works now?]
 * Raster images, fonts, and other hyperlinked resources can be inlined via
-  `data:` URIs.  [Not yet implemented.]
+  `data:` URIs.  [Partially implemented.]
 
 This project's ridiculous name comes from [a Bob the Angry Flower
 comic strip](http://www.angryflower.com/aposter.html).  No, I can't
