@@ -90,10 +90,10 @@ out whether URL-encoding would be shorter by scanning the buffer.
 
       base64 = opts.base64
       if not base64? or base64 == 'auto'
-        limit = opts.limit or 0
+        limit = opts.max_scan_bytes or 0
         limit = contents.length if limit <= 0
         limit = Math.min contents.length, limit
-        base64_len = 7 + Math.ceil limit*4/3
+        base64_len = 7 + 4*Math.ceil limit/3
         non_base64_len = limit
         for byte in contents[...limit]
           if not is_urlsafe[byte] then non_base64_len += 2
@@ -159,7 +159,32 @@ Can we test this?  I bet we can test this.
     if module is require.main
       assert = require 'assert'
       data_uri = module.exports
-      ck = (expected, args...) ->
-        observed = data_uri args...
-        assert.strictEqual observed, expected
-      ck 'data:text/plain;charset=UTF-8,foobar', 'foobar'
+      t = (expected, args...) -> assert.strictEqual expected, data_uri args...
+      t 'data:text/plain;charset=UTF-8,foobar', 'foobar'
+      t 'data:text/plain;charset=UTF-8;base64,Zm9vYmFy', 'foobar', base64: yes
+      t 'data:text/plain;charset=utf8,foobar',
+         contents: 'foobar', charset: 'utf8'
+      t 'data:application/octet-stream,foobar', new Buffer 'foobar'
+      t 'data:text/plain,foobar', new Buffer('foobar'), filename: 'foo.txt'
+      t 'data:text/plain,foobar', new Buffer('foobar'), path: 'foo.txt'
+      t 'data:image/gif,GIF89a%20foobar', 'GIF89a foobar'
+      t 'data:application/font-woff,wOFF%20foobar', 'wOFF foobar'
+      t 'data:text/html;charset=UTF-8,%3C!DOCTYPE%20html%3E', '<!DOCTYPE html>'
+      jpg_buf = (bytes...) -> new Buffer [0xff, 0xd8, 0xff, 0xe0, bytes...]
+      t 'data:image/jpeg,%FF%D8%FF%E0', jpg_buf()
+      t 'data:image/jpeg,%ff%d8%ff%e0', jpg_buf(), lowercase_hex: yes
+      t 'data:image/jpeg,%FF%D8%FF%E0%FF', jpg_buf 0xff
+      t 'data:image/jpeg;base64,/9j/4P//', jpg_buf 0xff, 0xff
+      t 'data:image/jpeg;base64,/9j/4P///w==', jpg_buf 0xff, 0xff, 0xff
+      t 'data:image/jpeg,%FF%D8%FF%E0%FF%FF', jpg_buf(0xff, 0xff), base64: no
+      t 'data:text/javascript,exports.msg%20=%20%27helloes%20worldses%27;%0A',
+         filename: 'test.js'
+      t 'data:text/javascript,exports.msg%20=%20%27helloes%20worldses%27;%0A',
+         path: 'test.js'
+      t 'data:foo/bar,foobar', 'foobar', type: 'foo/bar'
+      t 'data:foo/bar,foobar', 'foobar', mime_type: 'foo/bar'
+      t 'data:foo/bar,foobar', 'foobar', content_type: 'foo/bar'
+      t 'data:text/bar;charset=UTF-8,foobar', 'foobar', type: 'text/bar'
+      t "data:text/plain;charset=UTF-8,isn%27t", "isn't"
+      t "data:text/plain;charset=UTF-8,isn't", "isn't", allow_single_quotes: yes
+
