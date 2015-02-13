@@ -1,4 +1,4 @@
-Routines for building (data: URLs)[http://tools.ietf.org/html/rfc2397].
+Routines for building (data: URIs)[http://tools.ietf.org/html/rfc2397].
 This depends on nothing much and could/should probably be its own
 npm package at some point.
 
@@ -9,7 +9,7 @@ file names, and that is small and fast and has few dependencies.
 I guess stream support might be nice too.
 
 Let's just let the module's entire API consist of a single function
-that encodes its first argument and returns the resulting URL as a
+that encodes its first argument and returns the resulting URI as a
 string, taking an options object as a second argument.  Both arguments
 are optional -- for example if you just wanted to read from a file,
 you can specify the `path` option (or `filename`) and omit `contents`
@@ -33,7 +33,7 @@ it to properly encode `contents` passed in as a string.
       type = opts.type or opts.mime_type or opts.content_type or ''
       charset = opts.charset or opts.encoding
       type_has_charset = false
-      if not charset and m = /;\s*charset\s*=\s*['"]?([^\s"';]+)/i.match type
+      if not charset and m = /;\s*charset\s*=\s*['"]?([^\s"';]+)/i.exec type
         type_has_charset = true
         charset = m[1]
 
@@ -51,7 +51,7 @@ we were given a type, we should just use that.  Next preference is
 to use a filename suffix, if we have a recognizable one, if only
 because that isn't likely to surprise anyone.
 
-      if not type and path and m = /\.([^./\\]+)$/.match path
+      if not type and path and m = /\.([^./\\]+)$/.exec path
         type = ext_to_type[m[1].toLowerCase()]
 
 If that doesn't work, look for magic numbers at the start of the contents.
@@ -88,7 +88,7 @@ Next, figure out whether we want to use base64 or not.  If the
 caller is telling us what to do, go with that.  Otherwise, figure
 out whether URL-encoding would be shorter by scanning the buffer.
 
-      base64 = options.base64
+      base64 = opts.base64
       if not base64? or base64 == 'auto'
         limit = opts.limit or 0
         limit = contents.length if limit <= 0
@@ -103,7 +103,7 @@ out whether URL-encoding would be shorter by scanning the buffer.
 Ready to encode.  Base64 is easy, bceause the Buffer module does
 all the work.
 
-      if base64 then return "#{type};base64,#{contents.toString 'base64'}"
+      if base64 then return "data:#{type};base64,#{contents.toString 'base64'}"
 
 URL encoding is slightly more complicated, because we're doing it
 by hand.  Which means we may as well let the caller decide whether
@@ -116,7 +116,7 @@ most of the unescaped text is lowercase.
       chars = for byte in contents
         if is_urlsafe[byte] then String.fromCharCode byte
         else "%#{hex[byte >> 4]}#{hex[byte & 0xf]}"
-      return "#{type},#{chars.join ''}"
+      return "data:#{type},#{chars.join ''}"
 
 That's it for our API function.  All that remains is a bit of
 one-time module initialization.
@@ -147,10 +147,19 @@ Initialize our dictionary of known content types.
       {type: 'application/font-woff', prefix: 'wOFF'}
     ]
       type = magic.type
-      for ext in (magic.exts or /\w+$/.match(magic.type)[0]).split /\s+/
+      for ext in (magic.exts or /\w+$/.exec(magic.type)[0]).split /\s+/
         ext_to_type[ext] = type
       for prefix in magic.prefixes or [magic.prefix]
         if prefix
           prefix = new Buffer prefix
-          (prefixes_by_first_byte[prefix[0]] or= []).append {prefix, type}
+          (prefixes_by_first_byte[prefix[0]] or= []).push {prefix, type}
 
+Can we test this?  I bet we can test this.
+
+    if module is require.main
+      assert = require 'assert'
+      data_uri = module.exports
+      ck = (expected, args...) ->
+        observed = data_uri args...
+        assert.strictEqual observed, expected
+      ck 'data:text/plain;charset=UTF-8,foobar', 'foobar'

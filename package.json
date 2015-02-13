@@ -7,8 +7,7 @@
     "gribbl": "main.js"
   },
   "scripts": {
-    "prepublish": "iced -c *.coffee.md",
-    "test": "./main.js test.jade"
+    "prepublish": "iced -c *.coffee* && node data-uri.js && ./main.js test.jade"
   },
   "repository": {
     "type": "git",
