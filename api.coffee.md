@@ -59,6 +59,16 @@ the actual file name.
         if err then fail err
         $script.replaceWith "<script>#{buf}</script>"
 
+Inline any relative images as data: URIs.
+
+      for img in $('img[src]').get()
+        $img = $ img
+        oldUri = $img.attr 'src'
+        if /^(?:\w[\w+.-]*:|\/)/.test oldUri then continue
+        localPath = require('path').resolve inPath, '..', oldUri
+        newUri = require('./data-uri') path: localPath
+        $img.attr 'src', newUri
+
 Convert the DOM back to text, convert that to a buffer, and write
 it to the output file.
 

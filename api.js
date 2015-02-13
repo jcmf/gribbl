@@ -7,7 +7,7 @@
 
   module.exports = function() {
     return require('through2').obj(function(file, enc, cb) {
-      var $, $script, PluginError, b, basedir, buf, e, err, fail, inPath, jsStream, replaceExtension, script, text, ___iced_passed_deferral, __iced_deferrals, __iced_k, _ref;
+      var $, $img, $script, PluginError, b, basedir, buf, e, err, fail, img, inPath, jsStream, localPath, newUri, oldUri, replaceExtension, script, text, ___iced_passed_deferral, __iced_deferrals, __iced_k, _ref;
       __iced_k = __iced_k_noop;
       ___iced_passed_deferral = iced.findDeferral(arguments);
       _ref = require('gulp-util'), PluginError = _ref.PluginError, replaceExtension = _ref.replaceExtension;
@@ -100,6 +100,21 @@
         });
       })(this)((function(_this) {
         return function() {
+          var _i, _len, _ref1;
+          _ref1 = $('img[src]').get();
+          for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+            img = _ref1[_i];
+            $img = $(img);
+            oldUri = $img.attr('src');
+            if (/^(?:\w[\w+.-]*:|\/)/.test(oldUri)) {
+              continue;
+            }
+            localPath = require('path').resolve(inPath, '..', oldUri);
+            newUri = require('./data-uri')({
+              path: localPath
+            });
+            $img.attr('src', newUri);
+          }
           text = $.html();
           file.contents = new Buffer(text);
           return cb(null, file);
