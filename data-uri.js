@@ -15,10 +15,10 @@
     }
     type = opts.type || opts.mime_type || opts.content_type || '';
     charset = opts.charset || opts.encoding;
-    type_has_charset = false;
-    if (!charset && (m = /;\s*charset\s*=\s*['"]?([^\s"';]+)/i.exec(type))) {
-      type_has_charset = true;
-      charset = m[1];
+    m = /;\s*charset\s*=\s*['"]?([^\s"';]+)/i.exec(type);
+    type_has_charset = !!m;
+    if (type_has_charset) {
+      charset || (charset = m[1]);
     }
     if ('string' === typeof contents) {
       contents = new Buffer(contents, opts.encoding || opts.charset || 'utf8');
@@ -40,6 +40,9 @@
       }
     }
     type || (type = charset ? 'text/plain' : 'application/octet-stream');
+    if (!opts.no_default_charset) {
+      charset || (charset = opts.default_charset || 'UTF-8');
+    }
     if (charset && !type_has_charset && /^text\//.test(type)) {
       type = "" + type + ";charset=" + charset;
     }
@@ -182,16 +185,35 @@
     t('data:text/plain;charset=UTF-8;base64,Zm9vYmFy', 'foobar', {
       base64: true
     });
-    t('data:text/plain;charset=utf8,foobar', {
+    t('data:text/plain;charset=ascii,foobar', {
       contents: 'foobar',
-      charset: 'utf8'
+      charset: 'ascii'
+    });
+    t('data:text/plain;charset=bogus,foobar', {
+      contents: 'foobar',
+      charset: 'bogus',
+      encoding: 'utf8'
+    });
+    t('data:text/plain;charset=bogus,foobar', 'foobar', {
+      type: 'text/plain;charset=bogus',
+      encoding: 'utf8'
+    });
+    t('data:text/plain;charset=UTF-8,foobar', 'foobar', {
+      no_default_charset: true
     });
     t('data:application/octet-stream,foobar', new Buffer('foobar'));
-    t('data:text/plain,foobar', new Buffer('foobar'), {
+    t('data:text/plain;charset=UTF-8,foobar', new Buffer('foobar'), {
       filename: 'foo.txt'
     });
-    t('data:text/plain,foobar', new Buffer('foobar'), {
+    t('data:text/plain;charset=UTF-8,foobar', new Buffer('foobar'), {
       path: 'foo.txt'
+    });
+    t('data:image/gif,foobar', new Buffer('foobar'), {
+      path: 'foo.gif'
+    });
+    t('data:text/plain,foobar', new Buffer('foobar'), {
+      path: 'foo.txt',
+      no_default_charset: true
     });
     t('data:image/gif,GIF89a%20foobar', 'GIF89a foobar');
     t('data:application/font-woff,wOFF%20foobar', 'wOFF foobar');
@@ -206,15 +228,18 @@
       lowercase_hex: true
     });
     t('data:image/jpeg,%FF%D8%FF%E0%FF', jpg_buf(0xff));
+    t('data:image/jpeg;base64,/9j/4P8A', jpg_buf(0xff, {
+      base64: true
+    }));
     t('data:image/jpeg;base64,/9j/4P//', jpg_buf(0xff, 0xff));
     t('data:image/jpeg;base64,/9j/4P///w==', jpg_buf(0xff, 0xff, 0xff));
     t('data:image/jpeg,%FF%D8%FF%E0%FF%FF', jpg_buf(0xff, 0xff), {
       base64: false
     });
-    t('data:text/javascript,exports.msg%20=%20%27helloes%20worldses%27;%0A', {
+    t('data:text/javascript;charset=UTF-8,' + 'exports.msg%20=%20%27helloes%20worldses%27;%0A', {
       filename: 'test.js'
     });
-    t('data:text/javascript,exports.msg%20=%20%27helloes%20worldses%27;%0A', {
+    t('data:text/javascript;charset=UTF-8,' + 'exports.msg%20=%20%27helloes%20worldses%27;%0A', {
       path: 'test.js'
     });
     t('data:foo/bar,foobar', 'foobar', {

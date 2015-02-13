@@ -32,10 +32,9 @@ it to properly encode `contents` passed in as a string.
 
       type = opts.type or opts.mime_type or opts.content_type or ''
       charset = opts.charset or opts.encoding
-      type_has_charset = false
-      if not charset and m = /;\s*charset\s*=\s*['"]?([^\s"';]+)/i.exec type
-        type_has_charset = true
-        charset = m[1]
+      m = /;\s*charset\s*=\s*['"]?([^\s"';]+)/i.exec type
+      type_has_charset = !!m
+      if type_has_charset then charset or= m[1]
 
 The contents can be a buffer or a string.  If it's a string, we'll
 default to UTF-8 encoding (which MIME prefers to spell that way,
@@ -69,6 +68,13 @@ have a charset (or were given a string instead of a buffer), binary
 otherwise.
 
       type or= if charset then 'text/plain' else 'application/octet-stream'
+
+Even if we don't have a charset, we should probably default to
+supplying one if applicable, rather than remaining at the mercy of
+browser-specific auto-detection heuristics.
+
+      if not opts.no_default_charset
+        charset or= opts.default_charset or 'UTF-8'
 
 If we're using a textual content-type, and we have or were given a
 charset, append it now.
@@ -160,31 +166,115 @@ Can we test this?  I bet we can test this.
       assert = require 'assert'
       data_uri = module.exports
       t = (expected, args...) -> assert.strictEqual expected, data_uri args...
+
+A basic string.  Note that the spec allows us to omit `text/plain`,
+and maybe we should take it up on that generous offer, but I can't
+bring myself to care because who ever uses `text/plain` for anything?
+And this is, uh, clearer.
+
       t 'data:text/plain;charset=UTF-8,foobar', 'foobar'
+
+We can request base64 encoding, even though it makes the result
+longer and harder to read.
+
       t 'data:text/plain;charset=UTF-8;base64,Zm9vYmFy', 'foobar', base64: yes
-      t 'data:text/plain;charset=utf8,foobar',
-         contents: 'foobar', charset: 'utf8'
+
+We can pass the contents in as a field in the options object, alongside
+other options.
+
+      t 'data:text/plain;charset=ascii,foobar',
+          contents: 'foobar', charset: 'ascii'
+
+If we want to pass in a string and give one encoding name to the
+Buffer module to encode the string and use another name for the
+returned charset, we need to use the `encoding` option.
+
+      t 'data:text/plain;charset=bogus,foobar',
+          contents: 'foobar', charset: 'bogus', encoding: 'utf8'
+      t 'data:text/plain;charset=bogus,foobar',
+          'foobar', type: 'text/plain;charset=bogus', encoding: 'utf8'
+
+The `no_default_charset` option doesn't affect strings.
+
+      t 'data:text/plain;charset=UTF-8,foobar',
+          'foobar', no_default_charset: true
+
+If we pass in a buffer, the default MIME type changes, even if the
+bytes all happen to be ASCII.
+
       t 'data:application/octet-stream,foobar', new Buffer 'foobar'
-      t 'data:text/plain,foobar', new Buffer('foobar'), filename: 'foo.txt'
-      t 'data:text/plain,foobar', new Buffer('foobar'), path: 'foo.txt'
+
+Derive MIME type from filename.
+
+      t 'data:text/plain;charset=UTF-8,foobar',
+          new Buffer('foobar'), filename: 'foo.txt'
+      t 'data:text/plain;charset=UTF-8,foobar',
+          new Buffer('foobar'), path: 'foo.txt'
+      t 'data:image/gif,foobar', new Buffer('foobar'), path: 'foo.gif'
+
+With bytes as input, we can omit the charset.  This may be preferable
+if we really don't know what encoding the file is using, and would
+rather let the browser guess, but it seems dicey to me.
+
+      t 'data:text/plain,foobar',
+          new Buffer('foobar'), path: 'foo.txt', no_default_charset: true
+
+It's quite easy to make a text file that looks like a GIF.  Hardly
+anybody actually does this, though, except to annoy people or prove
+a point or make an oversimplified test case.
+
       t 'data:image/gif,GIF89a%20foobar', 'GIF89a foobar'
+
+Same for `.woff`, which is a web font file format you can use in
+CSS nowadays.
+
       t 'data:application/font-woff,wOFF%20foobar', 'wOFF foobar'
+
+We can identify HTML.  There's no point in scanning the contents
+for `meta charset`, right?  Since the browser will do that anyway?
+Probably?
+
       t 'data:text/html;charset=UTF-8,%3C!DOCTYPE%20html%3E', '<!DOCTYPE html>'
+
+Let's do some pretend JPEG experiments, so we can test the
+`lowercase_hex` option, and the logic that decides when to automatically
+cut over to base64.  Note that we're padding with equals signs to
+make the base64 data a multiple of 4 bytes.  The RFC wasn't super
+clear about that, was it?  I should check again.  Did any of the
+examples show definitely unpadded base64?  Anyway it doesn't matter
+what the RFC says....
+
       jpg_buf = (bytes...) -> new Buffer [0xff, 0xd8, 0xff, 0xe0, bytes...]
       t 'data:image/jpeg,%FF%D8%FF%E0', jpg_buf()
       t 'data:image/jpeg,%ff%d8%ff%e0', jpg_buf(), lowercase_hex: yes
       t 'data:image/jpeg,%FF%D8%FF%E0%FF', jpg_buf 0xff
+      t 'data:image/jpeg;base64,/9j/4P8A', jpg_buf 0xff, base64: yes
       t 'data:image/jpeg;base64,/9j/4P//', jpg_buf 0xff, 0xff
       t 'data:image/jpeg;base64,/9j/4P///w==', jpg_buf 0xff, 0xff, 0xff
       t 'data:image/jpeg,%FF%D8%FF%E0%FF%FF', jpg_buf(0xff, 0xff), base64: no
-      t 'data:text/javascript,exports.msg%20=%20%27helloes%20worldses%27;%0A',
-         filename: 'test.js'
-      t 'data:text/javascript,exports.msg%20=%20%27helloes%20worldses%27;%0A',
-         path: 'test.js'
+
+Make sure we can actually read from a file.  I happen to have a
+relatively short one lying around already that has "test" in the
+name, so we can use that.
+
+      t 'data:text/javascript;charset=UTF-8,' +
+        'exports.msg%20=%20%27helloes%20worldses%27;%0A', filename: 'test.js'
+      t 'data:text/javascript;charset=UTF-8,' +
+        'exports.msg%20=%20%27helloes%20worldses%27;%0A', path: 'test.js'
+
+You can specify your own MIME type.  By three different names, for
+some reason.  Is this a good idea?  Maybe not!
+
       t 'data:foo/bar,foobar', 'foobar', type: 'foo/bar'
       t 'data:foo/bar,foobar', 'foobar', mime_type: 'foo/bar'
       t 'data:foo/bar,foobar', 'foobar', content_type: 'foo/bar'
+
+Types that start with `text/` are special!
+
       t 'data:text/bar;charset=UTF-8,foobar', 'foobar', type: 'text/bar'
+
+Demonstrate the `allow_single_quotes` option, in case someone cares.
+
       t "data:text/plain;charset=UTF-8,isn%27t", "isn't"
       t "data:text/plain;charset=UTF-8,isn't", "isn't", allow_single_quotes: yes
 
