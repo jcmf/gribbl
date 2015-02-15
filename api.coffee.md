@@ -32,12 +32,76 @@ it's turned on... text files should end in a newline, dammit.
           return fail e
         text += '\n'
 
-We're going to use `cheerio`, a jQuery-like library that works on
-strings of HTML rather than a browser DOM, to help us find things
-in the HTML that need inlining.  (If Jade worked with streams, I
-might try `trumpet` here instead.  But it doesn't.)
+Define a subroutine that takes a URI, returns null if we don't want
+to inline it (because it isn't relative), and otherwise reads the
+corresponding local file and returns the data.
+
+      readUrl = (url, encoding, basePath = inPath) ->
+        if /^(?:\w[\w+.-]*:|\/)/.test url then return
+        path = require('path').resolve basePath, '..', url
+        contents = require('fs').readFileSync path, encoding
+        {path, contents}
+
+In many cases we're going to want to convert the object returned by
+`readUrl` into a `data:` URI.
+
+      toUrl = (options) -> if options then require('./data-uri') options
+      fixUrl = (url, basePath) -> toUrl readUrl url, null, basePath
+
+A routine to inline URLs in CSS.  Modifies an object returned by
+readUrl in-place, and returns true if anything changed.
+
+      fixCSS = (opts) ->
+        orig = opts.contents
+        opts.contents = orig.replace /\burl\s*\(\s*(["']?)([^()'"]+)\1\s*\)/g,
+          (s, q, u) -> if u = fixUrl u, opts.path then """url("#{u}")""" else s
+        orig is opts.contents
+
+[Maybe I should try to find a real CSS parser instead of using a
+heuristic?  The routine above might apply spurious subsitutions to
+comments or literal text (e.g. `content`), and it doesn't understand
+backslash-escaping.  Also I'm pretty sure URLs are allowed to contain
+unescaped parentheses and single quotes.]
+
+For HTML, we're going to use `cheerio`, a jQuery-like library that
+works on strings of HTML rather than a browser DOM, to help us find
+things in the HTML that need inlining.  (If Jade worked with streams,
+I might try `trumpet` here instead.  But it doesn't.)
 
       $ = require('cheerio').load text
+
+Inline any relative images as data: URIs.
+
+      for img in $('img[src]').get()
+        $img = $ img
+        if url = fixUrl $img.attr 'src' then $img.attr 'src', url
+
+Inline any relative URLs we find in already-inlined stylesheets.
+Note that we want to do this *before* inlining external stylesheets,
+because these URLs are relative to the parent HTML document, not
+relative to the external stylesheet.
+
+      for style in $('style')
+        $style = $ style
+        css = contents: $style.html()
+        if fixCSS css then $style.replaceWith "<style>#{css.contents}</style>"
+
+[Unfortunately the above ends up destroying any attributes of the
+`style` tag whenever we rewrite any URLs.  I should probably fix
+that.  Unfortunately `cheerio` seems to get upset if I pass non-HTML
+as input to the `.html` method.  But I don't think I can use `.text`,
+because the contents of a style tag are *forbidden* from following
+the usual HTML escaping conventions.]
+
+Inline external stylesheets as `style` tags, while correctly inlining
+any URLs they contain.
+
+      for link in $('link[href][rel="stylesheet"]')
+        $link = $ link
+        url = $link.attr 'href'
+        if css = readUrl url, 'utf8'
+          fixCSS css
+          $link.replaceWith "<style>#{css.contents}</style>"
 
 Find script tags and browserify them.  For now I'm just going to
 process script tag contents; I'll leave `src=` inlining for later.
@@ -59,20 +123,9 @@ the actual file name.
         if err then fail err
         $script.replaceWith "<script>#{buf}</script>"
 
-Inline any relative images as data: URIs.
-
-      for img in $('img[src]').get()
-        $img = $ img
-        oldUri = $img.attr 'src'
-        if /^(?:\w[\w+.-]*:|\/)/.test oldUri then continue
-        localPath = require('path').resolve inPath, '..', oldUri
-        newUri = require('./data-uri') path: localPath
-        $img.attr 'src', newUri
-
 Convert the DOM back to text, convert that to a buffer, and write
 it to the output file.
 
       text = $.html()
       file.contents = new Buffer text
       cb null, file
-

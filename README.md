@@ -8,11 +8,11 @@ for it to be a command-line tool that compiles a plain `.html` file
 (or a `.jade` template) into a single self-contained `.html` file.
 
 * Scripts, CSS stylesheets, and SVG images can be inlined into their
-  respective tags.  [Not yet implemented.]
+  respective tags.  [Only works for stylesheets so far.]
 * Resources used by scripts (such as `require()`d modules) can be inlined
   via Browserify.  [Maybe works now?]
 * Raster images, fonts, and other hyperlinked resources can be inlined via
-  `data:` URIs.  [Partially implemented.]
+  `data:` URIs.  [CSS and img tags should work now.]
 
 This project's ridiculous name comes from [a Bob the Angry Flower
 comic strip](http://www.angryflower.com/aposter.html).  No, I can't

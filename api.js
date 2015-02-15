@@ -7,7 +7,7 @@
 
   module.exports = function() {
     return require('through2').obj(function(file, enc, cb) {
-      var $, $img, $script, PluginError, b, basedir, buf, e, err, fail, img, inPath, jsStream, localPath, newUri, oldUri, replaceExtension, script, text, ___iced_passed_deferral, __iced_deferrals, __iced_k, _ref;
+      var $, $img, $link, $script, $style, PluginError, b, basedir, buf, css, e, err, fail, fixCSS, fixUrl, img, inPath, jsStream, link, readUrl, replaceExtension, script, style, text, toUrl, url, ___iced_passed_deferral, __iced_deferrals, __iced_k, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _ref3;
       __iced_k = __iced_k_noop;
       ___iced_passed_deferral = iced.findDeferral(arguments);
       _ref = require('gulp-util'), PluginError = _ref.PluginError, replaceExtension = _ref.replaceExtension;
@@ -35,13 +35,77 @@
         }
         text += '\n';
       }
+      readUrl = function(url, encoding, basePath) {
+        var contents, path;
+        if (basePath == null) {
+          basePath = inPath;
+        }
+        if (/^(?:\w[\w+.-]*:|\/)/.test(url)) {
+          return;
+        }
+        path = require('path').resolve(basePath, '..', url);
+        contents = require('fs').readFileSync(path, encoding);
+        return {
+          path: path,
+          contents: contents
+        };
+      };
+      toUrl = function(options) {
+        if (options) {
+          return require('./data-uri')(options);
+        }
+      };
+      fixUrl = function(url, basePath) {
+        return toUrl(readUrl(url, null, basePath));
+      };
+      fixCSS = function(opts) {
+        var orig;
+        orig = opts.contents;
+        opts.contents = orig.replace(/\burl\s*\(\s*(["']?)([^()'"]+)\1\s*\)/g, function(s, q, u) {
+          if (u = fixUrl(u, opts.path)) {
+            return "url(\"" + u + "\")";
+          } else {
+            return s;
+          }
+        });
+        return orig === opts.contents;
+      };
       $ = require('cheerio').load(text);
+      _ref1 = $('img[src]').get();
+      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+        img = _ref1[_i];
+        $img = $(img);
+        if (url = fixUrl($img.attr('src'))) {
+          $img.attr('src', url);
+        }
+      }
+      _ref2 = $('style');
+      for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
+        style = _ref2[_j];
+        $style = $(style);
+        css = {
+          contents: $style.html()
+        };
+        if (fixCSS(css)) {
+          $style.replaceWith("<style>" + css.contents + "</style>");
+        }
+      }
+      _ref3 = $('link[href][rel="stylesheet"]');
+      for (_k = 0, _len2 = _ref3.length; _k < _len2; _k++) {
+        link = _ref3[_k];
+        $link = $(link);
+        url = $link.attr('href');
+        if (css = readUrl(url, 'utf8')) {
+          fixCSS(css);
+          $link.replaceWith("<style>" + css.contents + "</style>");
+        }
+      }
       (function(_this) {
         return (function(__iced_k) {
-          var _i, _len, _ref1, _results, _while;
-          _ref1 = $('script').get();
-          _len = _ref1.length;
-          _i = 0;
+          var _l, _len3, _ref4, _results, _while;
+          _ref4 = $('script').get();
+          _len3 = _ref4.length;
+          _l = 0;
           _results = [];
           _while = function(__iced_k) {
             var _break, _continue, _next;
@@ -50,7 +114,7 @@
             };
             _continue = function() {
               return iced.trampoline(function() {
-                ++_i;
+                ++_l;
                 return _while(__iced_k);
               });
             };
@@ -58,10 +122,10 @@
               _results.push(__iced_next_arg);
               return _continue();
             };
-            if (!(_i < _len)) {
+            if (!(_l < _len3)) {
               return _break();
             } else {
-              script = _ref1[_i];
+              script = _ref4[_l];
               $script = $(script);
               jsStream = new require('stream').Readable();
               jsStream._read = function() {};
@@ -85,7 +149,7 @@
                       return buf = arguments[1];
                     };
                   })(),
-                  lineno: 57
+                  lineno: 121
                 }));
                 __iced_deferrals._fulfill();
               })(function() {
@@ -100,21 +164,6 @@
         });
       })(this)((function(_this) {
         return function() {
-          var _i, _len, _ref1;
-          _ref1 = $('img[src]').get();
-          for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-            img = _ref1[_i];
-            $img = $(img);
-            oldUri = $img.attr('src');
-            if (/^(?:\w[\w+.-]*:|\/)/.test(oldUri)) {
-              continue;
-            }
-            localPath = require('path').resolve(inPath, '..', oldUri);
-            newUri = require('./data-uri')({
-              path: localPath
-            });
-            $img.attr('src', newUri);
-          }
           text = $.html();
           file.contents = new Buffer(text);
           return cb(null, file);
