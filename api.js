@@ -36,22 +36,28 @@
         text += '\n';
       }
       resolvePath = function(url, basePath) {
+        var m;
         if (basePath == null) {
           basePath = inPath;
         }
         if (/^(?:\w[\w+.-]*:|\/)/.test(url)) {
           return;
         }
-        return require('path').resolve(basePath, '..', url);
+        if (!(m = /(^[^#]+)(#.*)?/.exec(url))) {
+          return;
+        }
+        return {
+          fragment: m[2],
+          path: require('path').resolve(basePath, '..', m[1])
+        };
       };
       readUrl = function(url, encoding, basePath) {
-        var path;
-        if (path = resolvePath(url, basePath)) {
-          return {
-            path: path,
-            contents: require('fs').readFileSync(path, encoding)
-          };
+        var result;
+        if (!(result = resolvePath(url, basePath))) {
+          return;
         }
+        result.contents = require('fs').readFileSync(result.path, encoding);
+        return result;
       };
       toUrl = function(options) {
         if (options) {
@@ -135,9 +141,9 @@
               $script = $(script);
               (function(__iced_k) {
                 if (url = $script.attr('src')) {
-                  entry = resolvePath(url);
                   (function(__iced_k) {
-                    if (!entry) {
+                    var _ref5;
+                    if (!(entry = (_ref5 = resolvePath(url)) != null ? _ref5.path : void 0)) {
                       (function(__iced_k) {
 _continue()
                       })(__iced_k);
@@ -168,7 +174,7 @@ _continue()
                         return buf = arguments[1];
                       };
                     })(),
-                    lineno: 128
+                    lineno: 140
                   }));
                   __iced_deferrals._fulfill();
                 })(function() {

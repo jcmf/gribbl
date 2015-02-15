@@ -32,18 +32,24 @@ it's turned on... text files should end in a newline, dammit.
           return fail e
         text += '\n'
 
-Define a subroutine that takes a URI, returns null if we don't want
-to inline it (because it isn't relative), and otherwise reads the
-corresponding local file and returns the data.  Also a version that
-doesn't read the data, because sometimes we want to let browserify
-do that part instead.
+Define a subroutine that takes a URI, reads the corresponding local
+file, and returns the name and contents as an object, or returns
+null if we don't want to inline the URL because it isn't relative
+or it's just the element ID of an SVG image already contained in
+this document or whatever.  Also a subroutine that just computes
+the filename without trying to read the file, because if the file
+is a script we want to let browserify read it, because otherwise
+there's no way to tell browserify what the file name was and it
+makes a wrong one up for the source map and so on.
 
       resolvePath = (url, basePath = inPath) ->
         if /^(?:\w[\w+.-]*:|\/)/.test url then return
-        require('path').resolve basePath, '..', url
+        if not m = /(^[^#]+)(#.*)?/.exec url then return
+        {fragment: m[2], path: require('path').resolve basePath, '..', m[1]}
       readUrl = (url, encoding, basePath) ->
-        if path = resolvePath url, basePath
-          {path, contents: require('fs').readFileSync path, encoding}
+        if not result = resolvePath url, basePath then return
+        result.contents = require('fs').readFileSync result.path, encoding
+        return result
 
 In many cases we're going to want to convert the object returned by
 `readUrl` into a `data:` URI.
@@ -109,14 +115,20 @@ any URLs they contain.
 Find script tags and browserify them.  If the script is external,
 let Browserify read the file itself.  Otherwise, we need to pass
 in a stream, not a string, and give it the directory the stream
-came from, but not an actual file name.
+came from (so it can resolve relative paths), but not an actual
+file name.  Possibly we should be trying to synthesize a simple
+source map in that case, mapping the script tag contents back to
+their position in the original HTML file, but that seems kinda
+tricky, and usually I'm using Jade anyway, and getting Jade to
+generate a proper source map for an inlined script sounds very
+tricky indeed.  For now, if you want a better source map, make your
+script external, I guess?
 
       for script in $('script').get()
         bopts = debug: yes
         $script = $ script
         if url = $script.attr 'src'
-          entry = resolvePath url
-          if not entry then continue
+          if not entry = resolvePath(url)?.path then continue
         else
           entry = new require('stream').Readable()
           entry._read = ->

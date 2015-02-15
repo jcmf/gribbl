@@ -4,7 +4,7 @@
     __slice = [].slice;
 
   module.exports = function(contents, opts) {
-    var base64, base64_len, byte, chars, charset, entries, entry, hex, is_urlsafe, limit, m, non_base64_len, path, type, type_has_charset, _i, _j, _len, _len1, _ref, _ref1;
+    var base64, base64_len, byte, chars, charset, entries, entry, fragment, hex, is_urlsafe, limit, m, non_base64_len, path, type, type_has_charset, _i, _j, _len, _len1, _ref, _ref1;
     path = null;
     if (contents && !opts) {
       _ref = 'object' !== typeof contents ? [contents, {}] : contents.contents ? [contents.contents, contents] : (path = contents.path || contents.filename) ? [null, contents] : [contents, {}], contents = _ref[0], opts = _ref[1];
@@ -68,8 +68,12 @@
       }
       base64 = base64_len < non_base64_len;
     }
+    fragment = opts.fragment || '';
+    if (fragment && fragment[0] !== '#') {
+      fragment = '#' + fragment;
+    }
     if (base64) {
-      return "data:" + type + ";base64," + (contents.toString('base64'));
+      return "data:" + type + ";base64," + (contents.toString('base64')) + fragment;
     }
     hex = opts.lowercase_hex ? '0123456789abcdef' : '0123456789ABCDEF';
     chars = (function() {
@@ -85,7 +89,7 @@
       }
       return _results;
     })();
-    return "data:" + type + "," + (chars.join(''));
+    return "data:" + type + "," + (chars.join('')) + fragment;
   };
 
   is_urlsafe_with_squote = [];
@@ -257,6 +261,21 @@
     t("data:text/plain;charset=UTF-8,isn%27t", "isn't");
     t("data:text/plain;charset=UTF-8,isn't", "isn't", {
       allow_single_quotes: true
+    });
+    t('data:text/plain;charset=UTF-8,foobar#foo', 'foobar', {
+      fragment: 'foo'
+    });
+    t('data:text/plain;charset=UTF-8,foobar#foo', 'foobar', {
+      fragment: '#foo'
+    });
+    t('data:text/plain;charset=UTF-8,foobar#', 'foobar', {
+      fragment: '#'
+    });
+    t('data:text/plain;charset=UTF-8,foobar', 'foobar', {
+      fragment: ''
+    });
+    t('data:text/plain;charset=UTF-8,foobar', 'foobar', {
+      fragment: null
     });
   }
 

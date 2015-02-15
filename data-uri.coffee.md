@@ -106,10 +106,16 @@ out whether URL-encoding would be shorter by scanning the buffer.
           if non_base64_len > base64_len then break
         base64 = base64_len < non_base64_len
 
+Allow the caller to specify a fragment to be appended to the URL.
+
+      fragment = opts.fragment or ''
+      if fragment and fragment[0] != '#' then fragment = '#' + fragment
+
 Ready to encode.  Base64 is easy, bceause the Buffer module does
 all the work.
 
-      if base64 then return "data:#{type};base64,#{contents.toString 'base64'}"
+      if base64
+        return "data:#{type};base64,#{contents.toString 'base64'}#{fragment}"
 
 URL encoding is slightly more complicated, because we're doing it
 by hand.  Which means we may as well let the caller decide whether
@@ -122,7 +128,7 @@ most of the unescaped text is lowercase.
       chars = for byte in contents
         if is_urlsafe[byte] then String.fromCharCode byte
         else "%#{hex[byte >> 4]}#{hex[byte & 0xf]}"
-      return "data:#{type},#{chars.join ''}"
+      return "data:#{type},#{chars.join ''}#{fragment}"
 
 That's it for our API function.  All that remains is a bit of
 one-time module initialization.
@@ -277,4 +283,12 @@ Demonstrate the `allow_single_quotes` option, in case someone cares.
 
       t "data:text/plain;charset=UTF-8,isn%27t", "isn't"
       t "data:text/plain;charset=UTF-8,isn't", "isn't", allow_single_quotes: yes
+
+Demonstrate the `fragment` option.
+
+      t 'data:text/plain;charset=UTF-8,foobar#foo', 'foobar', fragment: 'foo'
+      t 'data:text/plain;charset=UTF-8,foobar#foo', 'foobar', fragment: '#foo'
+      t 'data:text/plain;charset=UTF-8,foobar#', 'foobar', fragment: '#'
+      t 'data:text/plain;charset=UTF-8,foobar', 'foobar', fragment: ''
+      t 'data:text/plain;charset=UTF-8,foobar', 'foobar', fragment: null
 
