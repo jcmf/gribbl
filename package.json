@@ -1,6 +1,6 @@
 {
   "name": "gribbl",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "a webification technologies",
   "main": "index.js",
   "bin": {
