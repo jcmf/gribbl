@@ -3,16 +3,15 @@ a webification technologies
 
 ## What is this thing?
 
-This is only just barely starting to be a thing.  But the goal is
-for it to be a command-line tool that compiles a plain `.html` file
-(or a `.jade` template) into a single self-contained `.html` file.
+This thing is a command-line tool and gulp plugin that compiles a
+plain `.html` file (or a `.jade` template) into a single self-contained
+`.html` file.
 
-* Scripts, CSS stylesheets, and SVG images can be inlined into their
-  respective tags.  [Only works for stylesheets so far.]
-* Resources used by scripts (such as `require()`d modules) can be inlined
-  via Browserify.  [Maybe works now?]
-* Raster images, fonts, and other hyperlinked resources can be inlined via
-  `data:` URIs.  [CSS and img tags should work now.]
+* Scripts and stylesheets are inlined into the appropriate tag.
+* Resources used by scripts (such as `require()`d modules) are inlined
+  via Browserify.
+* Images, fonts, and other hyperlinked resources are inlined via
+  `data:` URIs.
 
 This project's ridiculous name comes from [a Bob the Angry Flower
 comic strip](http://www.angryflower.com/aposter.html).  No, I can't

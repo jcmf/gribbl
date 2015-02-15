@@ -7,7 +7,7 @@
 
   module.exports = function() {
     return require('through2').obj(function(file, enc, cb) {
-      var $, $img, $link, $script, $style, PluginError, b, basedir, buf, css, e, err, fail, fixCSS, fixUrl, img, inPath, jsStream, link, readUrl, replaceExtension, script, style, text, toUrl, url, ___iced_passed_deferral, __iced_deferrals, __iced_k, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _ref3;
+      var $, $img, $link, $script, $style, PluginError, b, bopts, buf, css, e, entry, err, fail, fixCSS, fixUrl, img, inPath, link, readUrl, replaceExtension, resolvePath, script, style, text, toUrl, url, ___iced_passed_deferral, __iced_deferrals, __iced_k, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _ref3;
       __iced_k = __iced_k_noop;
       ___iced_passed_deferral = iced.findDeferral(arguments);
       _ref = require('gulp-util'), PluginError = _ref.PluginError, replaceExtension = _ref.replaceExtension;
@@ -35,20 +35,23 @@
         }
         text += '\n';
       }
-      readUrl = function(url, encoding, basePath) {
-        var contents, path;
+      resolvePath = function(url, basePath) {
         if (basePath == null) {
           basePath = inPath;
         }
         if (/^(?:\w[\w+.-]*:|\/)/.test(url)) {
           return;
         }
-        path = require('path').resolve(basePath, '..', url);
-        contents = require('fs').readFileSync(path, encoding);
-        return {
-          path: path,
-          contents: contents
-        };
+        return require('path').resolve(basePath, '..', url);
+      };
+      readUrl = function(url, encoding, basePath) {
+        var path;
+        if (path = resolvePath(url, basePath)) {
+          return {
+            path: path,
+            contents: require('fs').readFileSync(path, encoding)
+          };
+        }
       };
       toUrl = function(options) {
         if (options) {
@@ -126,37 +129,54 @@
               return _break();
             } else {
               script = _ref4[_l];
-              $script = $(script);
-              jsStream = new require('stream').Readable();
-              jsStream._read = function() {};
-              jsStream.push($script.html());
-              jsStream.push(null);
-              basedir = require('path').dirname(inPath);
-              b = require('browserify')({
-                basedir: basedir,
-                entries: [jsStream],
+              bopts = {
                 debug: true
-              });
+              };
+              $script = $(script);
               (function(__iced_k) {
-                __iced_deferrals = new iced.Deferrals(__iced_k, {
-                  parent: ___iced_passed_deferral,
-                  filename: "/Users/zaphod/github/gribbl/api.coffee.md"
-                });
-                b.bundle(__iced_deferrals.defer({
-                  assign_fn: (function() {
-                    return function() {
-                      err = arguments[0];
-                      return buf = arguments[1];
-                    };
-                  })(),
-                  lineno: 121
-                }));
-                __iced_deferrals._fulfill();
-              })(function() {
-                if (err) {
-                  fail(err);
+                if (url = $script.attr('src')) {
+                  entry = resolvePath(url);
+                  (function(__iced_k) {
+                    if (!entry) {
+                      (function(__iced_k) {
+_continue()
+                      })(__iced_k);
+                    } else {
+                      return __iced_k();
+                    }
+                  })(__iced_k);
+                } else {
+                  entry = new require('stream').Readable();
+                  entry._read = function() {};
+                  entry.push($script.html());
+                  entry.push(null);
+                  bopts.entries = [entry];
+                  return __iced_k(bopts.basedir = require('path').dirname(inPath));
                 }
-                return _next($script.replaceWith("<script>" + buf + "</script>"));
+              })(function() {
+                bopts.entries = [entry];
+                b = require('browserify')(bopts);
+                (function(__iced_k) {
+                  __iced_deferrals = new iced.Deferrals(__iced_k, {
+                    parent: ___iced_passed_deferral,
+                    filename: "/Users/zaphod/github/gribbl/api.coffee.md"
+                  });
+                  b.bundle(__iced_deferrals.defer({
+                    assign_fn: (function() {
+                      return function() {
+                        err = arguments[0];
+                        return buf = arguments[1];
+                      };
+                    })(),
+                    lineno: 128
+                  }));
+                  __iced_deferrals._fulfill();
+                })(function() {
+                  if (err) {
+                    fail(err);
+                  }
+                  return _next($script.replaceWith("<script>" + buf + "</script>"));
+                });
               });
             }
           };

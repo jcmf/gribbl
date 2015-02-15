@@ -34,13 +34,16 @@ it's turned on... text files should end in a newline, dammit.
 
 Define a subroutine that takes a URI, returns null if we don't want
 to inline it (because it isn't relative), and otherwise reads the
-corresponding local file and returns the data.
+corresponding local file and returns the data.  Also a version that
+doesn't read the data, because sometimes we want to let browserify
+do that part instead.
 
-      readUrl = (url, encoding, basePath = inPath) ->
+      resolvePath = (url, basePath = inPath) ->
         if /^(?:\w[\w+.-]*:|\/)/.test url then return
-        path = require('path').resolve basePath, '..', url
-        contents = require('fs').readFileSync path, encoding
-        {path, contents}
+        require('path').resolve basePath, '..', url
+      readUrl = (url, encoding, basePath) ->
+        if path = resolvePath url, basePath
+          {path, contents: require('fs').readFileSync path, encoding}
 
 In many cases we're going to want to convert the object returned by
 `readUrl` into a `data:` URI.
@@ -103,22 +106,26 @@ any URLs they contain.
           fixCSS css
           $link.replaceWith "<style>#{css.contents}</style>"
 
-Find script tags and browserify them.  For now I'm just going to
-process script tag contents; I'll leave `src=` inlining for later.
-I'm also not going to worry about `type` just yet.
+Find script tags and browserify them.  If the script is external,
+let Browserify read the file itself.  Otherwise, we need to pass
+in a stream, not a string, and give it the directory the stream
+came from, but not an actual file name.
 
       for script in $('script').get()
+        bopts = debug: yes
         $script = $ script
-
-Browserify wants a stream, not a string, and wants basedir but not
-the actual file name.
-
-        jsStream = new require('stream').Readable()
-        jsStream._read = ->
-        jsStream.push $script.html()
-        jsStream.push null
-        basedir = require('path').dirname inPath
-        b = require('browserify') {basedir, entries: [jsStream], debug: yes}
+        if url = $script.attr 'src'
+          entry = resolvePath url
+          if not entry then continue
+        else
+          entry = new require('stream').Readable()
+          entry._read = ->
+          entry.push $script.html()
+          entry.push null
+          bopts.entries = [entry]
+          bopts.basedir = require('path').dirname inPath
+        bopts.entries = [entry]
+        b = require('browserify') bopts
         await b.bundle defer err, buf
         if err then fail err
         $script.replaceWith "<script>#{buf}</script>"
