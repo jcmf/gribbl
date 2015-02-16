@@ -4,7 +4,7 @@ Seems like nobody bothers to support streaming?  I guess gulp.src()
 buffers everything by default.  Just as well, since the Jade API
 doesn't support streaming.
 
-    module.exports = -> require('through2').obj (file, enc, cb) ->
+    module.exports = (opts = {}) -> require('through2').obj (file, enc, cb) ->
       {PluginError, replaceExtension} = require 'gulp-util'
       fail = (e) -> cb new PluginError 'gribbl', e
       if file.isStream() then return fail 'streaming not supported'
@@ -26,11 +26,12 @@ it's turned on... text files should end in a newline, dammit.
 
       text = String file.contents
       if /\.jade$/.test inPath
+        jopts = filename: inPath, pretty: opts.pretty
         try
-          text = require('jade').render text, filename: inPath, pretty: yes
+          text = require('jade').render text, jopts
         catch e
           return fail e
-        text += '\n'
+        if jopts.pretty then text += '\n'
 
 Define a subroutine that takes a URI, reads the corresponding local
 file, and returns the name and contents as an object, or returns
@@ -60,11 +61,11 @@ In many cases we're going to want to convert the object returned by
 A routine to inline URLs in CSS.  Modifies an object returned by
 readUrl in-place, and returns true if anything changed.
 
-      fixCSS = (opts) ->
-        orig = opts.contents
-        opts.contents = orig.replace /\burl\s*\(\s*(["']?)([^()'"]+)\1\s*\)/g,
-          (s, q, u) -> if u = fixUrl u, opts.path then """url("#{u}")""" else s
-        orig is opts.contents
+      fixCSS = (copts) ->
+        orig = copts.contents
+        copts.contents = orig.replace /\burl\s*\(\s*(["']?)([^()'"]+)\1\s*\)/g,
+          (s, q, u) -> if u = fixUrl u, copts.path then """url("#{u}")""" else s
+        orig is copts.contents
 
 [Maybe I should try to find a real CSS parser instead of using a
 heuristic?  The routine above might apply spurious subsitutions to
@@ -125,7 +126,7 @@ tricky indeed.  For now, if you want a better source map, make your
 script external, I guess?
 
       for script in $('script').get()
-        bopts = debug: yes
+        bopts = debug: opts.debug
         $script = $ script
         if url = $script.attr 'src'
           if not entry = resolvePath(url)?.path then continue

@@ -5,9 +5,12 @@
   iced = require('iced-runtime');
   __iced_k = __iced_k_noop = function() {};
 
-  module.exports = function() {
+  module.exports = function(opts) {
+    if (opts == null) {
+      opts = {};
+    }
     return require('through2').obj(function(file, enc, cb) {
-      var $, $img, $link, $script, $style, PluginError, b, bopts, buf, css, e, entry, err, fail, fixCSS, fixUrl, img, inPath, link, readUrl, replaceExtension, resolvePath, script, style, text, toUrl, url, ___iced_passed_deferral, __iced_deferrals, __iced_k, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _ref3;
+      var $, $img, $link, $script, $style, PluginError, b, bopts, buf, css, e, entry, err, fail, fixCSS, fixUrl, img, inPath, jopts, link, readUrl, replaceExtension, resolvePath, script, style, text, toUrl, url, ___iced_passed_deferral, __iced_deferrals, __iced_k, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _ref3;
       __iced_k = __iced_k_noop;
       ___iced_passed_deferral = iced.findDeferral(arguments);
       _ref = require('gulp-util'), PluginError = _ref.PluginError, replaceExtension = _ref.replaceExtension;
@@ -24,16 +27,19 @@
       }
       text = String(file.contents);
       if (/\.jade$/.test(inPath)) {
+        jopts = {
+          filename: inPath,
+          pretty: opts.pretty
+        };
         try {
-          text = require('jade').render(text, {
-            filename: inPath,
-            pretty: true
-          });
+          text = require('jade').render(text, jopts);
         } catch (_error) {
           e = _error;
           return fail(e);
         }
-        text += '\n';
+        if (jopts.pretty) {
+          text += '\n';
+        }
       }
       resolvePath = function(url, basePath) {
         var m;
@@ -67,17 +73,17 @@
       fixUrl = function(url, basePath) {
         return toUrl(readUrl(url, null, basePath));
       };
-      fixCSS = function(opts) {
+      fixCSS = function(copts) {
         var orig;
-        orig = opts.contents;
-        opts.contents = orig.replace(/\burl\s*\(\s*(["']?)([^()'"]+)\1\s*\)/g, function(s, q, u) {
-          if (u = fixUrl(u, opts.path)) {
+        orig = copts.contents;
+        copts.contents = orig.replace(/\burl\s*\(\s*(["']?)([^()'"]+)\1\s*\)/g, function(s, q, u) {
+          if (u = fixUrl(u, copts.path)) {
             return "url(\"" + u + "\")";
           } else {
             return s;
           }
         });
-        return orig === opts.contents;
+        return orig === copts.contents;
       };
       $ = require('cheerio').load(text);
       _ref1 = $('img[src]').get();
@@ -136,7 +142,7 @@
             } else {
               script = _ref4[_l];
               bopts = {
-                debug: true
+                debug: opts.debug
               };
               $script = $(script);
               (function(__iced_k) {
@@ -174,7 +180,7 @@ _continue()
                         return buf = arguments[1];
                       };
                     })(),
-                    lineno: 140
+                    lineno: 141
                   }));
                   __iced_deferrals._fulfill();
                 })(function() {
