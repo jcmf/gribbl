@@ -9,7 +9,7 @@ Now the CLI.  First we need to parse command-line options.
     .parse process.argv
     if not opts.args.length then opts.help()
 
-Now do the stuff.  Setting `nonull` lets us raise an errir if one
+Now do the stuff.  Setting `nonull` lets us raise an error if one
 of the arguments is the name of a file that doesn't exist.
 
     gulp = require 'gulp'
