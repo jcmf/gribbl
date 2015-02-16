@@ -19,19 +19,37 @@ you can apply further renaming or send it to another directory.
       file.path = replaceExtension file.path, '.html'
       if not file.isBuffer() then return cb null, file
 
-If this is a `.jade` file, render it; otherwise assume it's HTML
-already.  Jade never ends its output in a newline, which seems
-forgiveable when pretty mode is turned off (the default), but when
-it's turned on... text files should end in a newline, dammit.
+If this is a `.jade` file, render it; otherwise, assume it's HTML
+already.  Jade templates have access to the following variables:
+
+* `filename` is the name of the Jade template itself (also used by Jade)
+* `pretty` is true if pretty-printing was requested (also used by Jade)
+* `require` can be used to load node modules at template rendering time
+* `gribblOpts` contains the options passed to the gribbl API or CLI
+* `packagePath` points to the template's `package.json` (if it has one)
+* `package` contains the parsed contents of the template's `package.json`
+
+Jade never ends its output in a newline, which seems forgiveable
+when pretty mode is turned off (the default), but when it's turned
+on... text files should end in a newline, dammit.
 
       text = String file.contents
       if /\.jade$/.test inPath
-        jopts = filename: inPath, pretty: opts.pretty
+        jopts =
+          filename: inPath
+          pretty: opts.pretty,
+          globals: ['require']
+          gribblOpts: opts,
+          packagePath: require('relative-package') inPath
+        jopts.package = if jopts.packagePath
+          JSON.parse require('fs').readFileSync jopts.packagePath, 'utf8'
         try
           text = require('jade').render text, jopts
         catch e
           return fail e
         if jopts.pretty then text += '\n'
+
+Now that we have the HTML, it's time to start inlining things.
 
 Define a subroutine that takes a URI, reads the corresponding local
 file, and returns the name and contents as an object, or returns

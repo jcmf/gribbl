@@ -29,8 +29,12 @@
       if (/\.jade$/.test(inPath)) {
         jopts = {
           filename: inPath,
-          pretty: opts.pretty
+          pretty: opts.pretty,
+          globals: ['require'],
+          gribblOpts: opts,
+          packagePath: require('relative-package')(inPath)
         };
+        jopts["package"] = jopts.packagePath ? JSON.parse(require('fs').readFileSync(jopts.packagePath, 'utf8')) : void 0;
         try {
           text = require('jade').render(text, jopts);
         } catch (_error) {
@@ -180,7 +184,7 @@ _continue()
                         return buf = arguments[1];
                       };
                     })(),
-                    lineno: 141
+                    lineno: 159
                   }));
                   __iced_deferrals._fulfill();
                 })(function() {

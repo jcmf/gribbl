@@ -1,7 +1,7 @@
 doctype html
 html(lang='en')
   head
-    title Test
+    title= package.name
     script
       :coffee-script
         console.log require('./test').msg
@@ -11,6 +11,7 @@ html(lang='en')
     :markdown
       # Test
       Helloes, worldses!
+      This is [#{package.name}](#{package.homepage}) version #{package.version}.
     img#absolute(src='http://example.com/test.gif')
     img#relative(src='test.gif#fragment')
     img#svg-id(src='#some-id')
