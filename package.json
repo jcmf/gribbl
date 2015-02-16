@@ -1,14 +1,13 @@
 {
   "name": "gribbl",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "a webification technologies",
   "main": "index.js",
   "bin": {
     "gribbl": "main.js"
   },
   "scripts": {
-    "prepublish":
-      "iced -c *.coffee* && node data-uri.js && ./main.js --pretty test.jade"
+    "prepublish": "iced -c *.coffee* && node data-uri.js && ./main.js --pretty test.jade"
   },
   "repository": {
     "type": "git",
