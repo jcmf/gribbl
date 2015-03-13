@@ -191,6 +191,7 @@ _continue()
                   if (err) {
                     fail(err);
                   }
+                  buf = buf.toString().replace(/<(\/script|!--)/gi, '<\\$1');
                   return _next($script.replaceWith("<script>" + buf + "</script>"));
                 });
               });

@@ -159,7 +159,14 @@ script external, I guess?
         b = require('browserify') bopts
         await b.bundle defer err, buf
         if err then fail err
+        buf = buf.toString().replace /<(\/script|!--)/gi, '<\\$1'
         $script.replaceWith "<script>#{buf}</script>"
+
+The [escaping rules for script
+tags](http://www.w3.org/html/wg/drafts/html/master/semantics.html#restrictions-for-contents-of-script-elements)
+are strange.  I don't want to try to replace `<script` (yet?) because
+that sequence can appear outside a string literal in well-formed
+Javascript.  But at least we can get the other two.
 
 Convert the DOM back to text, convert that to a buffer, and write
 it to the output file.
