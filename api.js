@@ -87,7 +87,7 @@
             return s;
           }
         });
-        return orig === copts.contents;
+        return orig !== copts.contents;
       };
       $ = require('cheerio').load(text);
       _ref1 = $('img[src]').get();

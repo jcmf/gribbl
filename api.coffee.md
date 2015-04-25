@@ -83,7 +83,7 @@ readUrl in-place, and returns true if anything changed.
         orig = copts.contents
         copts.contents = orig.replace /\burl\s*\(\s*(["']?)([^()'"]+)\1\s*\)/g,
           (s, q, u) -> if u = fixUrl u, copts.path then """url("#{u}")""" else s
-        orig is copts.contents
+        orig != copts.contents
 
 [Maybe I should try to find a real CSS parser instead of using a
 heuristic?  The routine above might apply spurious subsitutions to

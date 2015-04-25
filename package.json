@@ -32,5 +32,8 @@
     "marked": "^0.3.3",
     "relative-package": "^1.0.0",
     "through2": "^0.6.3"
+  },
+  "devDependencies": {
+    "stylus": "^0.51.0"
   }
 }
