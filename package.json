@@ -27,6 +27,7 @@
     "gulp-util": "^3.0.3",
     "iced-runtime": "^1.0.2",
     "jade": "^1.9.2",
+    "jstransformer-stylus": "0.0.6",
     "promise": "^7.0.3",
     "relative-package": "^1.0.0",
     "through2": "^2.0.0"
@@ -34,7 +35,6 @@
   "devDependencies": {
     "iced-coffee-script": "^108.0.6",
     "jstransformer-coffee-script": "^0.1.0",
-    "jstransformer-marked": "0.0.2",
-    "jstransformer-stylus": "0.0.6"
+    "jstransformer-marked": "0.0.2"
   }
 }
