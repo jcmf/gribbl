@@ -26,7 +26,7 @@
     "gulp": "^3.8.10",
     "gulp-util": "^3.0.3",
     "iced-runtime": "^1.0.2",
-    "jade": "^1.9.2",
+    "jade": "^1.11.0",
     "relative-package": "^1.0.0",
     "through2": "^2.0.0"
   },
