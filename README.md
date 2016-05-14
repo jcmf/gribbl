@@ -8,10 +8,10 @@ plain `.html` file (or a `.jade` template) into a single self-contained
 `.html` file.
 
 * Scripts and stylesheets are inlined into the appropriate tag.
-* Resources used by scripts (such as `require()`d modules) are inlined
-  via Browserify.
 * Images, fonts, and other hyperlinked resources are inlined via
   `data:` URIs.
+* Resources used by scripts (such as `require()`d modules) are inlined
+  via Browserify.
 
 This project's ridiculous name comes from [a Bob the Angry Flower
 comic strip](http://www.angryflower.com/aposter.html).  No, I can't
@@ -20,7 +20,7 @@ wasn't.
 
 ## License
 
-Copyright (c) 2015 Jacques Frechet
+Copyright (c) 2016 Jacques Frechet
 
 ### The MIT License (MIT)
 

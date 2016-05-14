@@ -111,7 +111,7 @@ Allow the caller to specify a fragment to be appended to the URL.
       fragment = opts.fragment or ''
       if fragment and fragment[0] != '#' then fragment = '#' + fragment
 
-Ready to encode.  Base64 is easy, bceause the Buffer module does
+Ready to encode.  Base64 is easy, because the Buffer module does
 all the work.
 
       if base64
